@@ -1,35 +1,29 @@
-import express from "express";
+import express from 'express';
+import { MongoClient } from 'mongodb';
+import nodemailer from 'nodemailer';
 import cors from "cors";
-import { MongoClient, ServerApiVersion } from "mongodb";
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const app = express();
 
-// Use CORS middleware with specific options
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "https://frontend-6ubd5jkcu-harishs-projects-01a8d1be.vercel.app"],
-    methods: ["POST", "GET"],
-    allowedHeaders: ["Content-Type"],
-    credentials: true,
-  })
-);
+// CORS middleware configuration
+app.use(cors({
+  origin: ["http://localhost:3000", "https://frontend-6ubd5jkcu-harishs-projects-01a8d1be.vercel.app"],
+  methods: ["POST", "GET"],
+  allowedHeaders: ["Content-Type"],
+  credentials: true,
+}));
 
 app.use(express.json());
 
-const uri = process.env.MONGODB_URI;
+// MongoDB Atlas URI with database name
+const uri = "mongodb+srv://harishmaneru:Xe2Mz13z83IDhbPW@cluster0.bu3exkw.mongodb.net/harish?retryWrites=true&w=majority&tls=true";
 const client = new MongoClient(uri, {
   serverApi: {
-    version: ServerApiVersion.v1,
+    version: '1', 
     strict: true,
     deprecationErrors: true,
   },
 });
-
-console.log(uri);
 
 // Function to create Ethereal transporter
 async function createEtherealTransporter() {
@@ -51,18 +45,18 @@ async function sendEmail(userDetails) {
     const email = userDetails.email;
     const subject = "Your Submitted Details";
     const text = `
-    Thank you for submitting your details!
-    Full Name: ${userDetails.fullName}
-    Age: ${userDetails.age}
-    Education Level: ${userDetails.educationLevel}
-    Institute: ${userDetails.institute}
-    What You Studied: ${userDetails.study}
-    Work Experience: ${userDetails.experience}
-    Future Goals: ${userDetails.goals}
-    English Scores - Listening: ${userDetails.scores}
-    English Scores - Reading: ${userDetails.reading}
-    English Scores - Speaking: ${userDetails.speaking}
-    English Scores - Writing: ${userDetails.writing}
+      Thank you for submitting your details!
+      Full Name: ${userDetails.fullName}
+      Age: ${userDetails.age}
+      Education Level: ${userDetails.educationLevel}
+      Institute: ${userDetails.institute}
+      What You Studied: ${userDetails.study}
+      Work Experience: ${userDetails.experience}
+      Future Goals: ${userDetails.goals}
+      English Scores - Listening: ${userDetails.scores}
+      English Scores - Reading: ${userDetails.reading}
+      English Scores - Speaking: ${userDetails.speaking}
+      English Scores - Writing: ${userDetails.writing}
     `;
     const mailOptions = {
       from: "no-reply@ethereal.email",
@@ -81,38 +75,37 @@ async function sendEmail(userDetails) {
 async function run() {
   try {
     await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("harish").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-  } finally {
-    await client.close();
+    console.log("Connected successfully to MongoDB Atlas");
+  } catch (error) {
+    console.error("Error connecting to MongoDB Atlas:", error);
   }
 }
-run().catch(console.dir);
 
+// Endpoint to handle POST request
 app.post("/postUser", async (req, res) => {
-  console.log("body: ", req.body);
   try {
-    const session = client.startSession();
     await client.connect();
     const db = client.db("harish");
     const userCollection = db.collection("onepgr");
+    const session = client.startSession();
     await session.withTransaction(async () => {
       await userCollection.insertOne(req.body);
       await sendEmail(req.body);
     });
-    res.status(200).send(JSON.stringify("successfully inserted"));
+    res.status(200).json("Successfully inserted");
   } catch (err) {
     console.error("An error occurred:", err);
-    res.status(500).send("Error occurred");
+    res.status(500).json("Error occurred");
   } finally {
     await client.close();
   }
 });
 
-const PORT = process.env.PORT || 3000;
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+
+run();
