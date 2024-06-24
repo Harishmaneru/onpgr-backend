@@ -2,12 +2,15 @@ import express from 'express';
 import { MongoClient } from 'mongodb';
 import nodemailer from 'nodemailer';
 import cors from "cors";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 
 // CORS middleware configuration
 app.use(cors({
-  origin: ["http://localhost:3000", "https://frontend-6ubd5jkcu-harishs-projects-01a8d1be.vercel.app"],
+  origin: ["http://localhost:3000", "https://frontend-black-three-76.vercel.app/"],
   methods: ["POST", "GET"],
   allowedHeaders: ["Content-Type"],
   credentials: true,
@@ -16,7 +19,7 @@ app.use(cors({
 app.use(express.json());
 
 // MongoDB Atlas URI with database name
-const uri = "mongodb+srv://harishmaneru:Xe2Mz13z83IDhbPW@cluster0.bu3exkw.mongodb.net/harish?retryWrites=true&w=majority&tls=true";
+const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri, {
   serverApi: {
     version: '1', 
@@ -27,13 +30,12 @@ const client = new MongoClient(uri, {
 
 // Function to create Ethereal transporter
 async function createEtherealTransporter() {
-  let testAccount = await nodemailer.createTestAccount();
   return nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT,
     auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
   });
 }
@@ -75,7 +77,7 @@ async function sendEmail(userDetails) {
 async function run() {
   try {
     await client.connect();
-    console.log("Connected successfully to MongoDB Atlas");
+    console.log("Connected successfully to MongoDB Cluster");
   } catch (error) {
     console.error("Error connecting to MongoDB Atlas:", error);
   }
